@@ -15,7 +15,8 @@
     "songs.read",
     "songs.write",
     "playlists.read",
-    "playlists.write"
+    "playlists.write",
+    "inter-plugin"
   ],
   "updateUrl": "https://raw.githubusercontent.com/deerwan/songloft-plugin-openlist/main/plugin.json",
   "download_url": "https://github.com/deerwan/songloft-plugin-openlist/releases/download/v2026.8.18/openlist.jsplugin.zip",

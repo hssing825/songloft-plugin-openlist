@@ -190,6 +190,44 @@ export async function searchFiles(
   }))
 }
 
+/**
+ * fs/search 不可用时的兜底搜索:服务端默认不启用搜索索引("none"),
+ * 此时 /api/fs/search 报错。改用 fs/list 从根目录 BFS 递归遍历,
+ * 客户端按文件名包含关键词过滤。节点数与命中数设上限保护,
+ * 超大目录配合外层调用方的超时兜底,只返回已找到的部分。
+ */
+export async function walkSearchFiles(
+  config: OpenListConfig,
+  keyword: string,
+  maxVisited = 30000,
+  maxMatches = 50,
+): Promise<OpenListFileItem[]> {
+  const kw = keyword.toLowerCase()
+  const matches: OpenListFileItem[] = []
+  const queue: string[] = ['/']
+  let visited = 0
+  while (queue.length > 0 && visited < maxVisited && matches.length < maxMatches) {
+    const dir = queue.shift() as string
+    let items: OpenListFileItem[]
+    try {
+      items = await listFiles(config, dir)
+    } catch (e) {
+      songloft.log.warn(`[OpenList] walk search list failed at ${dir} on ${config.name}: ${String((e as Error)?.message || e)}`)
+      continue
+    }
+    visited += items.length
+    for (const item of items) {
+      if (item.isDir) {
+        queue.push(item.path)
+      } else if (item.name.toLowerCase().includes(kw)) {
+        matches.push(item)
+        if (matches.length >= maxMatches) break
+      }
+    }
+  }
+  return matches
+}
+
 /** fs/get 获取文件详情 + 直链(related 为同级同前缀名文件,含同名 .lrc 歌词) */
 export async function getFile(config: OpenListConfig, path: string): Promise<OpenListFileInfo> {
   const data = await apiCall<{ raw_url?: string; sign?: string; thumb?: string; name?: string; related?: { name: string }[] }>(
