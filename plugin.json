@@ -18,6 +18,9 @@
     "playlists.write",
     "inter-plugin"
   ],
+  "publicPaths": [
+    "/stream"
+  ],
   "updateUrl": "https://raw.githubusercontent.com/deerwan/songloft-plugin-openlist/main/plugin.json",
   "download_url": "https://github.com/deerwan/songloft-plugin-openlist/releases/download/v2026.8.18/openlist.jsplugin.zip",
   "entryHash": "fff02e58faec664de5d8e5f7692d7d83c0e0357f706489afba61d0afea1f74cf",

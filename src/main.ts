@@ -16,7 +16,7 @@ function registerSearchProviderToMiot(): void {
       await songloft.comm.call('miot', 'register-search-provider', {
         name: 'OpenList',
         searchPath: '/api/search/topone',
-      })
+      }, 5000)
       songloft.log.info('[OpenList] 已向 miot 注册搜索源候选')
     } catch (e) {
       if (attempts < 5) {
@@ -35,6 +35,12 @@ async function onInit(): Promise<void> {
 }
 
 async function onDeinit(): Promise<void> {
+  // 注销搜索源候选（best-effort，miot 未安装/无 comm 时静默跳过）
+  try {
+    if (songloft.comm && typeof songloft.comm.send === 'function') {
+      await songloft.comm.send('miot', 'unregister-search-provider', {})
+    }
+  } catch { /* ignore */ }
   songloft.log.info('[OpenList Plugin] Unmounted')
 }
 

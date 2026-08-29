@@ -52,6 +52,18 @@ export function testServerConnection(config) {
     });
 }
 
+// 全局设置(对外地址)
+export function fetchSettings() {
+    return pluginFetch('./settings');
+}
+
+export function saveSettings(settings) {
+    return pluginFetch('./settings', {
+        method: 'POST',
+        body: JSON.stringify(settings)
+    });
+}
+
 // 目录浏览
 export function fetchDirectoryItems(serverName, path) {
     const q = 'path=' + encodeURIComponent(path || '/');

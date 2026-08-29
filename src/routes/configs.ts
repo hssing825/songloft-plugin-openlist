@@ -1,9 +1,9 @@
 // 路由模块:服务器配置管理(CRUD + 测试连接)
-// 端点:GET/POST /lists, DELETE /lists/:id, POST /test
+// 端点:GET/POST /lists, DELETE /lists/:id, POST /test, GET/POST /settings
 
 import { jsonResponse } from '@songloft/plugin-sdk'
 import type { Router, HTTPRequest } from '@songloft/plugin-sdk'
-import { getConfigs, saveConfigs, getConfig } from '../config'
+import { getConfigs, saveConfigs, getConfig, getPublicHost, savePublicHost } from '../config'
 import { testConnection, clearToken } from '../services/openlist-client'
 import type { OpenListConfig } from '../types'
 
@@ -84,5 +84,22 @@ export function mountConfigsRoutes(router: Router): void {
     const config = await getConfig(params.id)
     if (!config) return jsonResponse({ error: 'Config not found' }, 404)
     return jsonResponse({ name: config.name, url: config.url, username: config.username || '' })
+  })
+
+  // 读取全局设置(对外地址)
+  router.get('/settings', async () => {
+    const publicHost = await getPublicHost()
+    return jsonResponse({ publicHost })
+  })
+
+  // 保存全局设置(对外地址:音箱可达的 Songloft 宿主地址,Docker 部署必填)
+  router.post('/settings', async (req) => {
+    const data = parseBody(req)
+    const publicHost = String(data.publicHost || '')
+    if (publicHost && !/^https?:\/\//i.test(publicHost.trim())) {
+      return jsonResponse({ error: 'publicHost 须以 http:// 或 https:// 开头' }, 400)
+    }
+    await savePublicHost(publicHost)
+    return jsonResponse({ success: true, publicHost: await getPublicHost() })
   })
 }

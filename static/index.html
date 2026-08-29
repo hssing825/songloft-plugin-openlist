@@ -80,6 +80,33 @@
                     <div class="empty-state">暂无服务器,请先添加</div>
                 </div>
             </div>
+
+            <!-- 对外地址(音箱直连播放需要) -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="material-symbols-outlined">router</span>
+                    对外地址(音箱直连)
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label class="form-label">音箱可访问的本服务地址</label>
+                        <input type="text" class="text-field" id="publicHostInput" placeholder="例如:http://192.168.1.190:58091">
+                    </div>
+                    <div class="form-label" style="margin-top:8px;margin-bottom:12px;color:var(--md-on-surface-variant);font-size:12px">
+                        Docker 部署必填。留空时尝试自动推导,推导失败则语音点歌回退为入库播放。
+                    </div>
+                    <div class="toolbar" style="padding:0;justify-content:flex-end;gap:12px;display:flex;">
+                        <button class="btn-outlined" id="autoFillPublicHostBtn">
+                            <span class="material-symbols-outlined">auto_fix_high</span>
+                            自动填充
+                        </button>
+                        <button class="btn-filled" id="savePublicHostBtn">
+                            <span class="material-symbols-outlined">save</span>
+                            保存地址
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 

@@ -4,10 +4,11 @@
 import {
     addServerConfig, deleteServerConfig, testServerConnection,
     submitRemoteSongs, fetchPlaylists, createPlaylist, addSongsToPlaylist,
+    saveSettings,
 } from './modules/api.js';
 import { AppState, toggleItemSelection, getSelectedItems, parentPath, getRememberedBrowse, clearRememberedBrowse } from './modules/state.js';
 import { showSnackbar, showProgress, hideProgress, escapeHtml } from './modules/ui.js';
-import { loadServerConfigs, readServerForm, clearServerForm } from './modules/config-view.js';
+import { loadServerConfigs, readServerForm, clearServerForm, loadSettings } from './modules/config-view.js';
 import {
     loadDirectory, renderBrowserList, updateBrowserChrome, updateSelectionBar, setSelectMode,
     setViewMode, updateViewToggleBtn, toggleSelectAll,
@@ -85,6 +86,41 @@ async function handleDeleteServer(serverName) {
         showSnackbar('已删除', 'success');
     } catch (e) {
         showSnackbar('删除失败:' + e.message, 'error');
+    }
+}
+
+// ---------- 全局设置动作 ----------
+function handleAutoFillPublicHost() {
+    // autoFill:浏览器当前访问地址大概率就是音箱可达的宿主地址,
+    // 只填入输入框不自动保存(反代/异网访问时 origin 可能并非音箱视角),由用户确认后保存。
+    const origin = window.location.origin || `${window.location.protocol}//${window.location.host}`;
+    if (!origin || origin === 'null') {
+        return showSnackbar('未检测到浏览器地址', 'warning');
+    }
+    document.getElementById('publicHostInput').value = origin;
+    const isLoopback = /localhost|127\.0\.0\.1|\[::1\]|(^|:)::1$/.test(origin);
+    if (isLoopback) {
+        showSnackbar('已填入,但 localhost/127.0.0.1 仅限本机,音箱无法访问', 'warning');
+    } else {
+        showSnackbar('已填入当前访问地址,确认后点保存');
+    }
+}
+
+async function handleSavePublicHost() {
+    const input = document.getElementById('publicHostInput');
+    const publicHost = input.value.trim();
+    if (publicHost && !/^https?:\/\//i.test(publicHost)) {
+        return showSnackbar('地址须以 http:// 或 https:// 开头', 'warning');
+    }
+    const btn = document.getElementById('savePublicHostBtn');
+    btn.disabled = true;
+    try {
+        await saveSettings({ publicHost });
+        showSnackbar(publicHost ? '对外地址已保存' : '对外地址已清空(回退自动推导)', 'success');
+    } catch (e) {
+        showSnackbar('保存失败:' + e.message, 'error');
+    } finally {
+        btn.disabled = false;
     }
 }
 
@@ -216,6 +252,8 @@ function bindEvents() {
     // 服务器管理
     document.getElementById('addServerBtn').addEventListener('click', handleAddServer);
     document.getElementById('testServerBtn').addEventListener('click', handleTestServer);
+    document.getElementById('savePublicHostBtn').addEventListener('click', handleSavePublicHost);
+    document.getElementById('autoFillPublicHostBtn').addEventListener('click', handleAutoFillPublicHost);
 
     // 服务器列表:删除按钮(事件委托)
     document.getElementById('serverList').addEventListener('click', e => {
@@ -282,6 +320,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     bindEvents();
     updateViewToggleBtn();
     await loadServerConfigs();
+    await loadSettings();
     await restoreLastBrowse();
     // 只有一台服务器且无浏览记忆时直接加载,免去手动选择步骤
     if (!AppState.currentServer && AppState.servers.length === 1) {

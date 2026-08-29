@@ -1,7 +1,7 @@
 // 视图:服务器管理(Tab 1)
 // 职责:渲染服务器列表、服务器下拉选项;不含事件绑定(由 app.js 绑定)
 
-import { fetchServerConfigs } from './api.js';
+import { fetchServerConfigs, fetchSettings } from './api.js';
 import { AppState } from './state.js';
 import { showSnackbar, escapeHtml } from './ui.js';
 
@@ -62,6 +62,17 @@ export function renderBrowseServerSelect() {
     if (current && AppState.servers.some(s => s.name === current)) {
         select.value = current;
     }
+}
+
+/**
+ * 加载全局设置并回显对外地址输入框(失败时静默,不阻断主流程)
+ */
+export async function loadSettings() {
+    try {
+        const settings = await fetchSettings();
+        const input = document.getElementById('publicHostInput');
+        if (input) input.value = settings.publicHost || '';
+    } catch (_) { /* ignore */ }
 }
 
 /**

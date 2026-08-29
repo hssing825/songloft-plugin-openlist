@@ -8,6 +8,7 @@ import { createSearchHandler, jsonResponse } from '@songloft/plugin-sdk'
 import type { Router, SearchResultItem } from '@songloft/plugin-sdk'
 import { getConfigs, getConfig } from '../config'
 import { searchFiles, walkSearchFiles } from '../services/openlist-client'
+import { buildPublicStreamUrl } from '../services/stream'
 import { isAudioFile, stripExtension } from '../types'
 import type { OpenListConfig, OpenListFileItem } from '../types'
 import { parseBody } from './configs'
@@ -85,9 +86,11 @@ export function mountSearchRoutes(router: Router): void {
     },
   }))
 
-  // POST /api/search/topone — 搜索并返回可安全入库的插件解析型音源(单首)
-  // 供 MIoT 等插件在本地索引找不到歌曲时调用。
-  // 不返回直链(第三方 CDN 快照易过期),播放时由宿主回调 /api/music/url 实时解析。
+  // POST /api/search/topone — 搜索并返回单首可播候选(双轨制)
+  // 供 MIoT 等插件在本地索引找不到歌曲时调用。结果同时携带:
+  // - url:本插件自实现的 /stream/:token 稳定直链(访问时才实时解析 302,永不过期),
+  //   MIoT 开 external_search_no_import 时据此「不入库直推」;推导不出音箱可达地址时置空。
+  // - source_data:解析型兜底。未开 no_import 时入库,播放由宿主回调 /api/music/url 实时解析。
   router.post('/api/search/topone', async (req) => {
     const body = parseBody(req)
     const keyword = String(body.keyword || '').trim()
@@ -164,13 +167,15 @@ export function mountSearchRoutes(router: Router): void {
 
     if (allCandidates.length === 0) return notFound
 
-    // 按评分降序,返回第一个配置仍然存在的解析型结果。
-    // 不返回 OpenList 直链,避免把过期快照持久化进 songs.url。
+    // 按评分降序,返回第一个配置仍然存在的候选。
+    // url 指向本插件 /stream/:token(每次访问实时解析,非快照),入库持久化也安全。
     allCandidates.sort((a, b) => b.score - a.score)
     for (const c of allCandidates) {
       const config = await getConfig(c.configName)
       if (!config) continue
       const lyric = `/api/v1/jsplugin/openlist/api/lyric?configName=${encodeURIComponent(c.configName)}&path=${encodeURIComponent(c.path)}`
+      const directUrl = await buildPublicStreamUrl({ configName: c.configName, path: c.path })
+      songloft.log.info(`[OpenList] topone hit: "${c.title}" url=${directUrl || '(empty → 回退入库)'}`)
       return {
         statusCode: 200,
         headers: { 'Content-Type': 'application/json' },
@@ -182,7 +187,7 @@ export function mountSearchRoutes(router: Router): void {
             artist: c.artist,
             album: '',
             duration: 0,
-            url: '',
+            url: directUrl,
             plugin_entry_path: 'openlist',
             source_data: { configName: c.configName, path: c.path },
             dedup_key: `openlist_${c.configName}_${c.path}`,
