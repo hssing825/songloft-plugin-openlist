@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/songloft-org/plugin-toolchain/main/schemas/plugin.schema.json",
   "name": "OpenList",
-  "version": "2026.8.29",
+  "version": "2026.9.8",
   "description": "通过 OpenList/AList API 接入外部网盘音乐库",
   "author": "deerwan",
   "homepage": "https://github.com/deerwan/songloft-plugin-openlist",
@@ -22,7 +22,7 @@
     "/stream"
   ],
   "updateUrl": "https://raw.githubusercontent.com/deerwan/songloft-plugin-openlist/main/plugin.json",
-  "download_url": "https://github.com/deerwan/songloft-plugin-openlist/releases/download/v2026.8.29/openlist.jsplugin.zip",
+  "download_url": "https://github.com/deerwan/songloft-plugin-openlist/releases/download/v2026.9.8/openlist.jsplugin.zip",
   "entryHash": "fff02e58faec664de5d8e5f7692d7d83c0e0357f706489afba61d0afea1f74cf",
   "zipHash": "4978379189033849fec38c3f7d704c2c9cb9a0abd0825057c6ae032aa80dbf94"
 }
