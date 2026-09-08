@@ -35,12 +35,10 @@ async function onInit(): Promise<void> {
 }
 
 async function onDeinit(): Promise<void> {
-  // 注销搜索源候选（best-effort，miot 未安装/无 comm 时静默跳过）
-  try {
-    if (songloft.comm && typeof songloft.comm.send === 'function') {
-      await songloft.comm.send('miot', 'unregister-search-provider', {})
-    }
-  } catch { /* ignore */ }
+  // 这里**不**向 miot 注销「外部搜索源候选」：
+  // 宿主空闲驱逐（约 10 分钟无活动）也会触发 onDeinit，注销会删掉 miot 注册表里的条目，
+  // 表现为设置页候选消失、必须点一次插件重新 onInit 才回来。
+  // 禁用/卸载场景由 miot 侧的 installed/active 过滤兜底，无需插件自删。
   songloft.log.info('[OpenList Plugin] Unmounted')
 }
 
